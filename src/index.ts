@@ -1,5 +1,5 @@
-import { UserRole, JobStatus, ApplicationStatus } from "../types/index";
-import type { User, Job, Application, WorkerProfile, ApiResponse, ID, Money, StringOrNumber } from "../types/index";
+import { UserRole, JobStatus, ApplicationStatus } from "./types/index.ts";
+import type { User, Job, Application, WorkerProfile, ApiResponse, ID, Money, StringOrNumber } from "./types/index.ts";
 
 const users: User[] = [
     { id: 1, name: "Brian Miranda", email: "brian@school.edu", role: UserRole.Client, isActive: true },

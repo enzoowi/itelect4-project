@@ -18,6 +18,4 @@ How to Install and Run
 
 npm install
 
-npx ts-node src/index.ts
-
-npx ts-node src/sample.ts
+npx tsx src/index.ts

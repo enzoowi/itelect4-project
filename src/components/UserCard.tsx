@@ -7,15 +7,11 @@ function UserCard({ user, onSelect }: UserCardProps) {
     const handleClick = (): void => {
         onSelect(user);
     };
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-        console.log("Search:", e.target.value);
-    };
     return (
         <div className="user-card card">
             <h3>{user.name}</h3>
             <p>Role: {user.role}</p>
             <button onClick={handleClick}>Select</button>
-            <input onChange={handleChange} placeholder="Search..." />
         </div>
     );
 }

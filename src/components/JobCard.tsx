@@ -11,7 +11,7 @@ const JobCard: React.FC<JobCardProps> = ({ job, onApply }) => {
         <div className="card job-card">
             <h3>{job.title}</h3>
             <p>{job.description}</p>
-            <p>Budget: ${job.budget}</p>
+            <p>Budget: ₱{job.budget}</p>
             <p>Status: {job.status}</p>
             <button onClick={() => onApply(job.id)}>Apply</button>
         </div>

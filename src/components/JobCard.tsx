@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router';
 import type { Job } from '../types/index';
 
 interface JobCardProps {
@@ -11,7 +12,11 @@ const JobCard: React.FC<JobCardProps> = ({ job, onApply }) => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-shadow flex flex-col h-full">
             <div className="p-5 flex-grow">
                 <div className="flex justify-between items-start mb-2">
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white leading-tight">{job.title}</h3>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white leading-tight">
+                        <Link to={`/jobs/${job.id}`} className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                            {job.title}
+                        </Link>
+                    </h3>
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
                         {job.status}
                     </span>
@@ -24,10 +29,16 @@ const JobCard: React.FC<JobCardProps> = ({ job, onApply }) => {
                     Budget: <span className="font-semibold text-gray-900 dark:text-white ml-1">₱{job.budget}</span>
                 </div>
             </div>
-            <div className="px-5 py-4 bg-gray-50 dark:bg-gray-700/50 border-t border-gray-100 dark:border-gray-700 mt-auto">
+            <div className="px-5 py-4 bg-gray-50 dark:bg-gray-700/50 border-t border-gray-100 dark:border-gray-700 flex gap-2 mt-auto">
+                <Link 
+                    to={`/jobs/${job.id}`}
+                    className="flex-1 bg-white dark:bg-gray-800 border border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-gray-700 font-medium py-2 px-4 rounded-lg transition-colors text-center"
+                >
+                    Details
+                </Link>
                 <button 
                     onClick={() => onApply(job.id)}
-                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+                    className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
                 >
                     Apply Now
                 </button>

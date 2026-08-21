@@ -21,10 +21,10 @@ const applications: Application[] = [
     { id: 203, jobId: 103, workerId: 3, coverLetter: "I got a 97 in Calculus last semester.", status: ApplicationStatus.Approved },
 ];
 
-let nextJobId: ID = 200;
-let nextAppId: ID = 300;
+let nextJobId: number = 200;
+let nextAppId: number = 300;
 
-function getById<T extends { id: number }>(list: T[], id: number): ApiResponse<T> {
+function getById<T extends { id: ID }>(list: T[], id: ID): ApiResponse<T> {
     const item = list.find(x => x.id === id);
     if (item !== undefined) {
         return { success: true, message: "Found.", data: item };
@@ -141,6 +141,7 @@ function getWorkerApplications(workerId: ID): Application[] {
 }
 
 function getPublicProfile(user: User): Omit<User, "email"> {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { email: _email, ...rest } = user;
     return rest;
 }
@@ -230,6 +231,7 @@ console.log(handleInput(new Date()));
 
 console.log("\n=== Special Types ===");
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const rawData: any = { task: "print notes", pages: 5 };
 console.log("any:", rawData);
 

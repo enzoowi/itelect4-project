@@ -4,7 +4,7 @@ import type { Job } from '../types/index';
 
 interface JobCardProps {
     job: Job;
-    onApply: (jobId: number) => void;
+    onApply: (jobId: string | number) => void;
 }
 
 const JobCard: React.FC<JobCardProps> = ({ job, onApply }) => {

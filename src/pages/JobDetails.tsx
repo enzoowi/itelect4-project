@@ -1,9 +1,24 @@
-
 import { useParams, useNavigate, Link } from 'react-router';
+import { useQuery } from '@tanstack/react-query';
+import { apiClient } from '../api/client';
 
 export default function JobDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+
+  const { data: job, isLoading, error } = useQuery({
+    queryKey: ['job', id],
+    queryFn: () => apiClient.getJobById(id!),
+    enabled: !!id,
+  });
+
+  if (isLoading) {
+    return <div className="p-8 text-center">Loading job details...</div>;
+  }
+
+  if (error || !job) {
+    return <div className="p-8 text-center text-red-500">Failed to load job details.</div>;
+  }
 
   return (
     <div className="max-w-3xl mx-auto mt-10 bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700">
@@ -23,10 +38,19 @@ export default function JobDetails() {
       <div className="space-y-4">
         <div>
           <h3 className="text-lg font-medium text-gray-500 dark:text-gray-400">Job Reference ID</h3>
-          <p className="text-xl font-semibold text-gray-900 dark:text-white">#{id}</p>
+          <p className="text-xl font-semibold text-gray-900 dark:text-white">#{job.id}</p>
         </div>
-        <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg text-indigo-700 dark:text-indigo-300">
-          <p>This is a simulated detail view for job ID {id}. In a real application, you would fetch the details for this specific entity.</p>
+        <div>
+          <h3 className="text-lg font-medium text-gray-500 dark:text-gray-400">Title</h3>
+          <p className="text-xl font-semibold text-gray-900 dark:text-white">{job.title}</p>
+        </div>
+        <div>
+          <h3 className="text-lg font-medium text-gray-500 dark:text-gray-400">Description</h3>
+          <p className="text-gray-900 dark:text-white">{job.description}</p>
+        </div>
+        <div>
+          <h3 className="text-lg font-medium text-gray-500 dark:text-gray-400">Budget</h3>
+          <p className="text-gray-900 dark:text-white">₱{job.budget}</p>
         </div>
         <div className="pt-6">
           <Link 

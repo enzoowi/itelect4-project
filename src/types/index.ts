@@ -21,7 +21,7 @@ export const ApplicationStatus = {
 } as const;
 export type ApplicationStatus = (typeof ApplicationStatus)[keyof typeof ApplicationStatus];
 
-export type ID = number;
+export type ID = string | number;
 export type Money = number;
 export type StringOrNumber = string | number;
 
@@ -72,3 +72,6 @@ export interface Submission {
     repoUrl: string;
     score?: number;
 }
+
+export type NewJob = Omit<Job, 'id'>;
+export type NewApplication = Omit<Application, 'id'>;

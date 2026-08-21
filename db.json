@@ -1,0 +1,69 @@
+{
+  "users": [
+    {
+      "id": "1",
+      "name": "Juan Campus",
+      "email": "juan@school.edu",
+      "role": "Client",
+      "isActive": true
+    },
+    {
+      "id": "2",
+      "name": "Maria Clara",
+      "email": "maria@school.edu",
+      "role": "Client",
+      "isActive": true
+    },
+    {
+      "id": "3",
+      "name": "Pedro Penduko",
+      "email": "pedro@school.edu",
+      "role": "Admin",
+      "isActive": true
+    }
+  ],
+  "jobs": [
+    {
+      "id": "101",
+      "title": "Buy lunch from canteen",
+      "description": "Please buy me a chicken meal.",
+      "budget": 150,
+      "clientId": 2,
+      "status": "Open"
+    },
+    {
+      "id": "102",
+      "title": "Print assignment",
+      "description": "Need 10 pages printed in color.",
+      "budget": 50,
+      "clientId": 1,
+      "status": "Open"
+    },
+    {
+      "title": "Pagawa ng code",
+      "description": "session 8 sa itelect4",
+      "budget": 200,
+      "clientId": "1",
+      "status": "Open",
+      "id": "FlY6YPlM8Kc"
+    },
+    {
+      "title": "test",
+      "description": "test",
+      "budget": 100,
+      "clientId": "1",
+      "status": "Open",
+      "id": "Gc8r4x-OCsI"
+    }
+  ],
+  "applications": [
+    {
+      "id": "201",
+      "jobId": 101,
+      "workerId": 1,
+      "coverLetter": "I'm heading to the canteen anyway.",
+      "status": "Pending"
+    }
+  ],
+  "$schema": "./node_modules/json-server/schema.json"
+}

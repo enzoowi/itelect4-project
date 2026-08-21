@@ -1,54 +1,73 @@
 import React, { useState, useEffect, useRef } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import UserCard from '../components/UserCard'
 import JobCard from '../components/JobCard'
 import ApplicationCard from '../components/ApplicationCard'
-import type { User, Job, Application } from '../types/index'
-import { UserRole, JobStatus, ApplicationStatus } from '../types/index'
-import useToggle from '../hooks/useToggle'
+import type { User } from '../types/index'
+import { JobStatus, ApplicationStatus } from '../types/index'
 import usePrevious from '../hooks/usePrevious'
-
-const initialUsers: User[] = [
-  { id: 1, name: "Juan Campus", email: "juan@school.edu", role: UserRole.Client, isActive: true },
-  { id: 2, name: "Maria Clara", email: "maria@school.edu", role: UserRole.Client, isActive: true },
-  { id: 3, name: "Pedro Penduko", email: "pedro@school.edu", role: UserRole.Admin, isActive: true },
-];
-
-const initialJobs: Job[] = [
-  { id: 101, title: "Buy lunch from canteen", description: "Please buy me a chicken meal.", budget: 150, clientId: 2, status: JobStatus.Open },
-  { id: 102, title: "Print assignment", description: "Need 10 pages printed in color.", budget: 50, clientId: 1, status: JobStatus.Open },
-];
-
-const initialApplications: Application[] = [
-  { id: 201, jobId: 101, workerId: 1, coverLetter: "I'm heading to the canteen anyway.", status: ApplicationStatus.Pending }
-];
+import { apiClient } from '../api/client'
+import { useUiStore } from '../store/uiStore'
 
 export default function Marketplace() {
-  const [users, setUsers] = useState<User[]>([]);
+  const queryClient = useQueryClient();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [applications, setApplications] = useState<Application[]>([]);
-  
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [searchJobTerm, setSearchJobTerm] = useState<string>("");
+  const { showJobForm, toggleJobForm, searchTerm, setSearchTerm } = useUiStore();
 
   const [newJobTitle, setNewJobTitle] = useState<string>("");
   const [newJobDesc, setNewJobDesc] = useState<string>("");
   const [newJobBudget, setNewJobBudget] = useState<number>(0);
 
   const jobTitleRef = useRef<HTMLInputElement>(null);
-  const [showJobForm, toggleJobForm] = useToggle(false);
   const previousJobTitle = usePrevious(newJobTitle);
 
+  const { data: users = [], isLoading: usersLoading } = useQuery({
+    queryKey: ['users'],
+    queryFn: apiClient.getUsers
+  });
+
+  const { data: jobs = [], isLoading: jobsLoading } = useQuery({
+    queryKey: ['jobs'],
+    queryFn: apiClient.getJobs
+  });
+
+  const { data: applications = [], isLoading: appsLoading } = useQuery({
+    queryKey: ['applications'],
+    queryFn: apiClient.getApplications
+  });
+
+  const createJobMutation = useMutation({
+    mutationFn: apiClient.createJob,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      setNewJobTitle("");
+      setNewJobDesc("");
+      setNewJobBudget(0);
+      toggleJobForm();
+    }
+  });
+
+  const createApplicationMutation = useMutation({
+    mutationFn: apiClient.createApplication,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['applications'] });
+    }
+  });
+
+  const updateApplicationMutation = useMutation({
+    mutationFn: ({ id, status }: { id: string | number, status: string }) => apiClient.updateApplicationStatus(id, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['applications'] });
+    }
+  });
+
   useEffect(() => {
-    setTimeout(() => {
-      setUsers(initialUsers);
-      setCurrentUser(initialUsers[0]);
-      setJobs(initialJobs);
-      setApplications(initialApplications);
-      setIsLoading(false);
-    }, 500);
-  }, []);
+    if (users.length > 0 && !currentUser) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setCurrentUser(users[0]);
+    }
+  }, [users, currentUser]);
 
   const handleJobTitleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     setNewJobTitle(e.target.value);
@@ -58,22 +77,16 @@ export default function Marketplace() {
     e.preventDefault();
     if (!currentUser) return;
     
-    const newJob: Job = {
-      id: Date.now(),
+    createJobMutation.mutate({
       title: newJobTitle,
       description: newJobDesc,
       budget: newJobBudget,
       clientId: currentUser.id,
       status: JobStatus.Open
-    };
-    setJobs([...jobs, newJob]);
-    setNewJobTitle("");
-    setNewJobDesc("");
-    setNewJobBudget(0);
-    toggleJobForm();
+    });
   };
 
-  const handleApplyJob = (jobId: number) => {
+  const handleApplyJob = (jobId: string | number) => {
     if (!currentUser) return;
     const job = jobs.find(j => j.id === jobId);
     if (job?.clientId === currentUser.id) {
@@ -89,17 +102,15 @@ export default function Marketplace() {
     const coverLetter = prompt("Enter a cover letter:");
     if (coverLetter === null) return;
 
-    const newApp: Application = {
-      id: Date.now(),
+    createApplicationMutation.mutate({
       jobId,
       workerId: currentUser.id,
       coverLetter,
       status: ApplicationStatus.Pending
-    };
-    setApplications([...applications, newApp]);
+    });
   };
 
-  const handleReviewApplication = (appId: number) => {
+  const handleReviewApplication = (appId: string | number) => {
     if (!currentUser) return;
     const app = applications.find(a => a.id === appId);
     const job = jobs.find(j => j.id === app?.jobId);
@@ -111,13 +122,13 @@ export default function Marketplace() {
 
     const action = prompt("Type 'approve' or 'reject' to update application status:");
     if (action === 'approve') {
-      setApplications(apps => apps.map(a => a.id === appId ? { ...a, status: ApplicationStatus.Approved } : a));
+      updateApplicationMutation.mutate({ id: appId, status: ApplicationStatus.Approved });
     } else if (action === 'reject') {
-      setApplications(apps => apps.map(a => a.id === appId ? { ...a, status: ApplicationStatus.Rejected } : a));
+      updateApplicationMutation.mutate({ id: appId, status: ApplicationStatus.Rejected });
     }
   };
 
-  if (isLoading || !currentUser) {
+  if (usersLoading || jobsLoading || appsLoading || !currentUser) {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="text-center">
@@ -212,8 +223,8 @@ export default function Marketplace() {
                   />
                 </div>
                 <div className="flex gap-2 mt-2">
-                  <button type="submit" className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-md font-medium transition-colors">
-                    Submit Job
+                  <button type="submit" disabled={createJobMutation.isPending} className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-md font-medium transition-colors disabled:opacity-50">
+                    {createJobMutation.isPending ? 'Submitting...' : 'Submit Job'}
                   </button>
                   <button type="button" onClick={() => jobTitleRef.current?.focus()} className="px-3 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-md transition-colors" title="Focus Title">
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
@@ -245,14 +256,14 @@ export default function Marketplace() {
                 <input 
                   type="text" 
                   placeholder="Search jobs..." 
-                  value={searchJobTerm} 
-                  onChange={(e) => setSearchJobTerm(e.target.value)} 
+                  value={searchTerm} 
+                  onChange={(e) => setSearchTerm(e.target.value)} 
                   className="w-full pl-10 pr-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm text-gray-900 dark:text-white transition-shadow"
                 />
               </div>
             </div>
             
-            {jobs.filter(j => j.title.toLowerCase().includes(searchJobTerm.toLowerCase()) || j.description.toLowerCase().includes(searchJobTerm.toLowerCase())).length === 0 ? (
+            {jobs.filter(j => j.title.toLowerCase().includes(searchTerm.toLowerCase()) || j.description.toLowerCase().includes(searchTerm.toLowerCase())).length === 0 ? (
               <div className="text-center py-12 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg">
                 <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                 <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">No jobs found</h3>
@@ -260,7 +271,7 @@ export default function Marketplace() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {jobs.filter(j => j.title.toLowerCase().includes(searchJobTerm.toLowerCase()) || j.description.toLowerCase().includes(searchJobTerm.toLowerCase())).map(job => (
+                {jobs.filter(j => j.title.toLowerCase().includes(searchTerm.toLowerCase()) || j.description.toLowerCase().includes(searchTerm.toLowerCase())).map(job => (
                   <div key={job.id} className="flex flex-col h-full bg-gray-50 dark:bg-gray-900/50 rounded-xl p-1 border border-gray-100 dark:border-gray-800">
                     <JobCard job={job} onApply={handleApplyJob} />
                     

@@ -3,7 +3,7 @@ import type { Application } from '../types/index';
 
 interface ApplicationCardProps {
     application: Application;
-    onReview: (appId: number) => void;
+    onReview: (appId: string | number) => void;
 }
 
 const ApplicationCard: React.FC<ApplicationCardProps> = ({ application, onReview }) => {

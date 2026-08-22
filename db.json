@@ -63,6 +63,13 @@
       "workerId": 1,
       "coverLetter": "I'm heading to the canteen anyway.",
       "status": "Pending"
+    },
+    {
+      "jobId": "FlY6YPlM8Kc",
+      "workerId": "2",
+      "coverLetter": "",
+      "status": "Approved",
+      "id": "6Yt9U2dLW38"
     }
   ],
   "$schema": "./node_modules/json-server/schema.json"

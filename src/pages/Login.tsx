@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuthStore } from '../store/authStore';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export default function Login() {
   const [username, setUsername] = useState('');
@@ -23,26 +26,26 @@ export default function Login() {
       </div>
       
       <form onSubmit={handleLogin} className="space-y-6">
-        <div>
-          <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <div className="grid gap-1.5">
+          <Label htmlFor="username" className="text-foreground">
             Username
-          </label>
-          <input 
+          </Label>
+          <Input 
             id="username"
             type="text" 
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             required
             placeholder="Enter any username..."
-            className="w-full px-4 py-3 rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 dark:text-white transition-shadow"
           />
         </div>
-        <button 
+        <Button 
           type="submit" 
-          className="w-full py-3 px-4 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-colors shadow-md"
+          disabled={username.trim() === ""}
+          className="w-full"
         >
           Sign In
-        </button>
+        </Button>
       </form>
     </div>
   );

@@ -4,9 +4,10 @@ interface UserCardProps {
     user: User;
     onSelect: (user: User) => void;
     compact?: boolean;
+    stats?: React.ReactNode;
 }
 
-function UserCard({ user, onSelect, compact = false }: UserCardProps) {
+function UserCard({ user, onSelect, compact = false, stats }: UserCardProps) {
     const handleClick = (): void => {
         onSelect(user);
     };
@@ -18,12 +19,13 @@ function UserCard({ user, onSelect, compact = false }: UserCardProps) {
                 <p className={`text-sm text-gray-500 dark:text-gray-400 ${compact ? 'm-0' : 'mt-1'}`}>
                     Role: <span className="font-medium text-blue-600 dark:text-blue-400">{user.role}</span>
                 </p>
+                {stats && <div className="mt-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">{stats}</div>}
             </div>
             <button 
                 onClick={handleClick}
-                className={`bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition-colors focus:ring-2 focus:ring-blue-500 focus:outline-none ${compact ? 'px-3 py-1.5 text-sm' : 'w-full py-2 mt-2'}`}
+                className={`bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition-colors focus:ring-2 focus:ring-blue-500 focus:outline-none ${compact ? 'px-3 py-1.5 text-sm ml-2' : 'w-full py-2 mt-2'}`}
             >
-                Select
+                Act as User
             </button>
         </div>
     );

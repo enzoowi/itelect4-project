@@ -24,53 +24,30 @@
   ],
   "jobs": [
     {
-      "id": "101",
-      "title": "Buy lunch from canteen",
-      "description": "Please buy me a chicken meal.",
+      "title": "Buy shawarma from Shawarma Shack",
+      "description": "Please buy me a B1T1 shawarma from Shawarma Shack",
       "budget": 150,
-      "clientId": 2,
-      "status": "Open"
+      "clientId": "1",
+      "status": "Open",
+      "id": "h2ajS_L09A0"
     },
     {
-      "id": "102",
       "title": "Print assignment",
-      "description": "Need 10 pages printed in color.",
-      "budget": 50,
-      "clientId": 1,
-      "status": "Open"
-    },
-    {
-      "title": "Pagawa ng code",
-      "description": "session 8 sa itelect4",
-      "budget": 200,
+      "description": "Print 2 copies of my assignment (colored)",
+      "budget": 70,
       "clientId": "1",
       "status": "Open",
-      "id": "FlY6YPlM8Kc"
+      "id": "OhB_6kkm010"
     },
     {
-      "title": "test",
-      "description": "test",
-      "budget": 100,
+      "title": "Help me code for ITELECT4",
+      "description": "Session 8 of ITELECT4 activity",
+      "budget": 250,
       "clientId": "1",
       "status": "Open",
-      "id": "Gc8r4x-OCsI"
+      "id": "7draadPYWus"
     }
   ],
-  "applications": [
-    {
-      "id": "201",
-      "jobId": 101,
-      "workerId": 1,
-      "coverLetter": "I'm heading to the canteen anyway.",
-      "status": "Pending"
-    },
-    {
-      "jobId": "FlY6YPlM8Kc",
-      "workerId": "2",
-      "coverLetter": "",
-      "status": "Approved",
-      "id": "6Yt9U2dLW38"
-    }
-  ],
+  "applications": [],
   "$schema": "./node_modules/json-server/schema.json"
 }

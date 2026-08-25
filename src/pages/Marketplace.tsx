@@ -1,5 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import UserCard from '../components/UserCard'
 import JobCard from '../components/JobCard'
 import ApplicationCard from '../components/ApplicationCard'
@@ -8,6 +10,11 @@ import { JobStatus, ApplicationStatus } from '../types/index'
 import usePrevious from '../hooks/usePrevious'
 import { apiClient } from '../api/client'
 import { useUiStore } from '../store/uiStore'
+import { jobSchema } from '../schemas/jobSchema'
+import type { JobFormValues } from '../schemas/jobSchema'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 export default function Marketplace() {
   const queryClient = useQueryClient();
@@ -15,11 +22,13 @@ export default function Marketplace() {
   
   const { showJobForm, toggleJobForm, searchTerm, setSearchTerm } = useUiStore();
 
-  const [newJobTitle, setNewJobTitle] = useState<string>("");
-  const [newJobDesc, setNewJobDesc] = useState<string>("");
-  const [newJobBudget, setNewJobBudget] = useState<number>(0);
+  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<JobFormValues>({
+    resolver: zodResolver(jobSchema),
+    mode: "onBlur",
+    defaultValues: { title: "", description: "", budget: 0 },
+  });
 
-  const jobTitleRef = useRef<HTMLInputElement>(null);
+  const newJobTitle = watch("title");
   const previousJobTitle = usePrevious(newJobTitle);
 
   const { data: users = [], isLoading: usersLoading } = useQuery({
@@ -41,9 +50,7 @@ export default function Marketplace() {
     mutationFn: apiClient.createJob,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
-      setNewJobTitle("");
-      setNewJobDesc("");
-      setNewJobBudget(0);
+      reset();
       toggleJobForm();
     }
   });
@@ -69,18 +76,13 @@ export default function Marketplace() {
     }
   }, [users, currentUser]);
 
-  const handleJobTitleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-    setNewJobTitle(e.target.value);
-  };
-
-  const handleCreateJob = (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = (values: JobFormValues) => {
     if (!currentUser) return;
     
     createJobMutation.mutate({
-      title: newJobTitle,
-      description: newJobDesc,
-      budget: newJobBudget,
+      title: values.title,
+      description: values.description,
+      budget: values.budget,
       clientId: currentUser.id,
       status: JobStatus.Open
     });
@@ -148,7 +150,7 @@ export default function Marketplace() {
           <select 
             className="bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-sm font-semibold rounded-md py-1 px-2 text-gray-900 dark:text-white"
             value={currentUser.id} 
-            onChange={(e) => setCurrentUser(users.find(u => u.id === Number(e.target.value)) || currentUser)}
+            onChange={(e) => setCurrentUser(users.find(u => String(u.id) === e.target.value) || currentUser)}
           >
             {users.map(u => (
               <option key={u.id} value={u.id}>{u.name} ({u.role})</option>
@@ -186,60 +188,85 @@ export default function Marketplace() {
             </button>
             
             {showJobForm && (
-              <form onSubmit={handleCreateJob} className="flex flex-col gap-4 animate-in fade-in slide-in-from-top-2 duration-200">
-                <div className="space-y-1">
-                  <input 
-                    ref={jobTitleRef}
+              <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="grid gap-1.5">
+                  <Label htmlFor="title" className="text-foreground">Job Title</Label>
+                  <Input 
+                    id="title"
+                    {...register("title")}
+                    aria-invalid={errors.title ? true : undefined}
                     placeholder="Job Title" 
-                    value={newJobTitle} 
-                    onChange={handleJobTitleChange} 
-                    required 
-                    className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white"
                   />
+                  {errors.title && (
+                    <p className="text-sm text-red-600 dark:text-red-400">{errors.title.message}</p>
+                  )}
                   {previousJobTitle !== undefined && previousJobTitle !== newJobTitle && (
                     <p className="text-xs text-gray-500 dark:text-gray-400 ml-1">Previous: "{previousJobTitle}"</p>
                   )}
                 </div>
-                <textarea 
-                  placeholder="Job Description" 
-                  value={newJobDesc} 
-                  onChange={e => setNewJobDesc(e.target.value)} 
-                  required 
-                  rows={3}
-                  className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white resize-none"
-                />
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <span className="text-gray-500 dark:text-gray-400 sm:text-sm">₱</span>
-                  </div>
-                  <input 
-                    type="number" 
-                    placeholder="Budget" 
-                    value={newJobBudget || ''} 
-                    onChange={e => setNewJobBudget(Number(e.target.value))} 
-                    required 
-                    min="1"
-                    className="w-full pl-7 pr-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white"
+                <div className="grid gap-1.5">
+                  <Label htmlFor="description" className="text-foreground">Job Description</Label>
+                  <textarea 
+                    id="description"
+                    {...register("description")}
+                    aria-invalid={errors.description ? true : undefined}
+                    placeholder="Job Description" 
+                    rows={3}
+                    className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white resize-none"
                   />
+                  {errors.description && (
+                    <p className="text-sm text-red-600 dark:text-red-400">{errors.description.message}</p>
+                  )}
+                </div>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="budget" className="text-foreground">Budget (₱)</Label>
+                  <Input 
+                    id="budget"
+                    type="number" 
+                    {...register("budget", { valueAsNumber: true })}
+                    aria-invalid={errors.budget ? true : undefined}
+                    placeholder="Budget" 
+                    min="1"
+                  />
+                  {errors.budget && (
+                    <p className="text-sm text-red-600 dark:text-red-400">{errors.budget.message}</p>
+                  )}
                 </div>
                 <div className="flex gap-2 mt-2">
-                  <button type="submit" disabled={createJobMutation.isPending} className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-md font-medium transition-colors disabled:opacity-50">
+                  <Button type="submit" disabled={createJobMutation.isPending} className="flex-1 bg-green-600 hover:bg-green-700 text-white">
                     {createJobMutation.isPending ? 'Submitting...' : 'Submit Job'}
-                  </button>
-                  <button type="button" onClick={() => jobTitleRef.current?.focus()} className="px-3 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-md transition-colors" title="Focus Title">
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                  </button>
+                  </Button>
                 </div>
               </form>
             )}
           </div>
           
           <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Directory</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Marketplace Network</h2>
             <div className="flex flex-col gap-3">
-              {users.map(user => (
-                <UserCard key={user.id} user={user} onSelect={() => setCurrentUser(user)} compact={true} />
-              ))}
+              {users.map(user => {
+                let stats = null;
+                if (user.role === 'Client') {
+                  const jobCount = jobs.filter(j => j.clientId === user.id && j.status === 'Open').length;
+                  stats = <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-green-500"></span> {jobCount} Open Job{jobCount !== 1 ? 's' : ''}</span>;
+                } else if (user.role === 'Worker' || user.name === 'Maria Clara') { 
+                  // Assuming Maria Clara is a Worker for demo, update as needed
+                  const appCount = applications.filter(a => a.workerId === user.id).length;
+                  stats = <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-indigo-500"></span> {appCount} Application{appCount !== 1 ? 's' : ''}</span>;
+                } else {
+                  stats = <span className="flex items-center gap-1.5 text-gray-400 dark:text-gray-500">System Admin</span>;
+                }
+
+                return (
+                  <UserCard 
+                    key={user.id} 
+                    user={user} 
+                    onSelect={() => setCurrentUser(user)} 
+                    compact={true} 
+                    stats={stats}
+                  />
+                );
+              })}
             </div>
           </div>
         </section>

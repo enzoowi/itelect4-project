@@ -1,5 +1,12 @@
 # Mini Job Marketplace
 
+## Live Deployment
+
+| | URL |
+|---|---|
+| **Frontend** | <https://itelect4-project-lilac.vercel.app/> |
+| **Backend API** | <https://itelect4-backend-omega.vercel.app/> |
+
 This is a React-based school campus task board web application built with TypeScript and Vite. Students can post small errands or tasks like buying food from the canteen, printing assignments, or getting tutoring help. Other students can apply to complete those tasks for a small fee. An admin can approve, reject, or mark tasks as completed.
 
 ## Project Structure and Features

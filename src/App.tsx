@@ -3,6 +3,7 @@ import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import Home from './pages/Home';
 import Login from './pages/Login';
+import Register from './pages/Register';
 import Marketplace from './pages/Marketplace';
 import JobDetails from './pages/JobDetails';
 import NotFound from './pages/NotFound';
@@ -13,6 +14,7 @@ function App() {
       <Route path="/" element={<Layout />}>
         <Route index element={<Home />} />
         <Route path="login" element={<Login />} />
+        <Route path="register" element={<Register />} />
 
         {/* Protected routes */}
         <Route element={<ProtectedRoute />}>

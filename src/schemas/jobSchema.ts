@@ -10,6 +10,7 @@ export const jobSchema = z.object({
     .number({ message: "Budget must be a number." })
     .min(1, "Budget must be at least 1.")
     .refine((budget) => budget % 10 === 0, "Budget must be a multiple of 10."),
+  category: z.string().optional(),
 });
 
 export type JobFormValues = z.infer<typeof jobSchema>;

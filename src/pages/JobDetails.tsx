@@ -48,6 +48,12 @@ export default function JobDetails() {
           <h3 className="text-lg font-medium text-gray-500 dark:text-gray-400">Description</h3>
           <p className="text-gray-900 dark:text-white">{job.description}</p>
         </div>
+        {job.category && (
+          <div>
+            <h3 className="text-lg font-medium text-gray-500 dark:text-gray-400">Category</h3>
+            <p className="text-xl font-semibold text-gray-900 dark:text-white">{job.category}</p>
+          </div>
+        )}
         <div>
           <h3 className="text-lg font-medium text-gray-500 dark:text-gray-400">Budget</h3>
           <p className="text-gray-900 dark:text-white">₱{job.budget}</p>

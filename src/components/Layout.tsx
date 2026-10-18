@@ -6,6 +6,7 @@ import useUiStore from '../store/uiStore';
 
 export default function Layout() {
   const token = useAuthStore((state) => state.token);
+  const userName = useAuthStore((state) => state.userName);
   const logout = useAuthStore((state) => state.logout);
   const navigate = useNavigate();
   const isDarkMode = useUiStore((state) => state.isDarkMode);
@@ -57,12 +58,22 @@ export default function Layout() {
               )}
             </button>
 
-            {token ? (
-              <button onClick={handleLogout} className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 font-medium transition-colors">Logout</button>
+            {token && userName ? (
+              <button onClick={handleLogout} className="px-3 py-1.5 text-sm rounded-md bg-red-600 text-white hover:bg-red-700 font-medium transition-colors">
+                Logout ({userName})
+              </button>
             ) : (
-              <Link to="/login" className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 font-medium transition-colors">Login</Link>
+              <div className="flex items-center gap-2">
+                <NavLink to="/login" className={({ isActive }) => isActive ? 'text-indigo-600 dark:text-indigo-400 font-semibold' : 'text-gray-600 dark:text-gray-300 hover:text-indigo-600 font-medium'}>
+                  Login
+                </NavLink>
+                <NavLink to="/register" className="px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 font-medium transition-colors">
+                  Register
+                </NavLink>
+              </div>
             )}
           </nav>
+
         </div>
       </header>
       <main>

@@ -1,15 +1,13 @@
-import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import UserCard from '../components/UserCard'
 import JobCard from '../components/JobCard'
 import ApplicationCard from '../components/ApplicationCard'
-import type { User } from '../types/index'
-import { JobStatus, ApplicationStatus } from '../types/index'
+import { ApplicationStatus } from '../types/index'
 import usePrevious from '../hooks/usePrevious'
-import { apiClient } from '../api/client'
+import { apiClient, API_URL } from '../api/client'
 import { useUiStore } from '../store/uiStore'
+import useAuthStore from '../store/authStore'
 import { jobSchema } from '../schemas/jobSchema'
 import type { JobFormValues } from '../schemas/jobSchema'
 import { Button } from '@/components/ui/button'
@@ -18,32 +16,32 @@ import { Label } from '@/components/ui/label'
 
 export default function Marketplace() {
   const queryClient = useQueryClient();
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const userName = useAuthStore((state) => state.userName);
   
   const { showJobForm, toggleJobForm, searchTerm, setSearchTerm } = useUiStore();
 
   const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<JobFormValues>({
     resolver: zodResolver(jobSchema),
     mode: "onBlur",
-    defaultValues: { title: "", description: "", budget: 0 },
+    defaultValues: { title: "", description: "", budget: 0, category: "" },
   });
 
   const newJobTitle = watch("title");
   const previousJobTitle = usePrevious(newJobTitle);
 
-  const { data: users = [], isLoading: usersLoading } = useQuery({
-    queryKey: ['users'],
-    queryFn: apiClient.getUsers
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: apiClient.getCategories,
   });
 
-  const { data: jobs = [], isLoading: jobsLoading } = useQuery({
+  const { data: jobs = [], isLoading: jobsLoading, isError: jobsError, error: jobErr } = useQuery({
     queryKey: ['jobs'],
-    queryFn: apiClient.getJobs
+    queryFn: apiClient.getJobs,
   });
 
   const { data: applications = [], isLoading: appsLoading } = useQuery({
     queryKey: ['applications'],
-    queryFn: apiClient.getApplications
+    queryFn: apiClient.getApplications,
   });
 
   const createJobMutation = useMutation({
@@ -52,76 +50,41 @@ export default function Marketplace() {
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
       reset();
       toggleJobForm();
-    }
+    },
   });
 
   const createApplicationMutation = useMutation({
     mutationFn: apiClient.createApplication,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['applications'] });
-    }
+    },
   });
 
   const updateApplicationMutation = useMutation({
     mutationFn: ({ id, status }: { id: string | number, status: string }) => apiClient.updateApplicationStatus(id, status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['applications'] });
-    }
+    },
   });
 
-  useEffect(() => {
-    if (users.length > 0 && !currentUser) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setCurrentUser(users[0]);
-    }
-  }, [users, currentUser]);
-
-  const onSubmit = (values: JobFormValues) => {
-    if (!currentUser) return;
-    
-    createJobMutation.mutate({
-      title: values.title,
-      description: values.description,
-      budget: values.budget,
-      clientId: currentUser.id,
-      status: JobStatus.Open
-    });
+  // Handler shrinks to one line because the form and API agree
+  const onSubmit = (values: JobFormValues): void => {
+    createJobMutation.mutate(values);
   };
 
   const handleApplyJob = (jobId: string | number) => {
-    if (!currentUser) return;
-    const job = jobs.find(j => j.id === jobId);
-    if (job?.clientId === currentUser.id) {
-      alert("You cannot apply to your own job.");
-      return;
-    }
-    const alreadyApplied = applications.find(a => a.jobId === jobId && a.workerId === currentUser.id);
-    if (alreadyApplied) {
-      alert("You have already applied for this job.");
-      return;
-    }
-    
     const coverLetter = prompt("Enter a cover letter:");
     if (coverLetter === null) return;
 
     createApplicationMutation.mutate({
       jobId,
-      workerId: currentUser.id,
+      workerId: 1,
       coverLetter,
-      status: ApplicationStatus.Pending
+      status: ApplicationStatus.Pending,
     });
   };
 
   const handleReviewApplication = (appId: string | number) => {
-    if (!currentUser) return;
-    const app = applications.find(a => a.id === appId);
-    const job = jobs.find(j => j.id === app?.jobId);
-    
-    if (job?.clientId !== currentUser.id) {
-      alert("Only the client who created the job can review its applications.");
-      return;
-    }
-
     const action = prompt("Type 'approve' or 'reject' to update application status:");
     if (action === 'approve') {
       updateApplicationMutation.mutate({ id: appId, status: ApplicationStatus.Approved });
@@ -130,7 +93,16 @@ export default function Marketplace() {
     }
   };
 
-  if (usersLoading || jobsLoading || appsLoading || !currentUser) {
+  if (jobsError) {
+    return (
+      <div className="max-w-2xl mx-auto my-12 rounded-lg bg-red-50 p-6 text-red-700 border border-red-200">
+        <h3 className="font-bold text-lg mb-2">Connection Error</h3>
+        <p>{jobErr?.message} -- tried {API_URL}/api/jobs</p>
+      </div>
+    );
+  }
+
+  if (jobsLoading || appsLoading) {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="text-center">
@@ -142,25 +114,23 @@ export default function Marketplace() {
   }
 
   return (
-    <div>
-      <div className="mb-6 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 flex items-center justify-between">
-        <h2 className="font-bold text-gray-900 dark:text-white">Active User Context</h2>
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      {/* Active User Context Banner */}
+      <div className="mb-6 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="font-bold text-gray-900 dark:text-white">Active Session</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Authenticated via API Token</p>
+        </div>
         <div className="flex items-center gap-2">
-          <label className="text-sm text-gray-500">Switch User:</label>
-          <select 
-            className="bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-sm font-semibold rounded-md py-1 px-2 text-gray-900 dark:text-white"
-            value={currentUser.id} 
-            onChange={(e) => setCurrentUser(users.find(u => String(u.id) === e.target.value) || currentUser)}
-          >
-            {users.map(u => (
-              <option key={u.id} value={u.id}>{u.name} ({u.role})</option>
-            ))}
-          </select>
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300">
+            <span className="w-2 h-2 rounded-full bg-green-500 mr-2"></span>
+            Logged in as {userName}
+          </span>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Left Column: Actions & Users */}
+        {/* Left Column: Actions & Reference Categories */}
         <section className="lg:col-span-4 flex flex-col gap-8">
           <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
             <div className="flex justify-between items-center mb-4">
@@ -195,7 +165,7 @@ export default function Marketplace() {
                     id="title"
                     {...register("title")}
                     aria-invalid={errors.title ? true : undefined}
-                    placeholder="Job Title" 
+                    placeholder="e.g. Campus errand to library" 
                   />
                   {errors.title && (
                     <p className="text-sm text-red-600 dark:text-red-400">{errors.title.message}</p>
@@ -204,13 +174,31 @@ export default function Marketplace() {
                     <p className="text-xs text-gray-500 dark:text-gray-400 ml-1">Previous: "{previousJobTitle}"</p>
                   )}
                 </div>
+
+                {/* Reference Resource: Categories Dropdown */}
+                <div className="grid gap-1.5">
+                  <Label htmlFor="category" className="text-foreground">Category</Label>
+                  <select 
+                    id="category"
+                    {...register("category")}
+                    className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white"
+                  >
+                    <option value="">Select a category...</option>
+                    {categories.map((c) => (
+                      <option key={c.code} value={c.name}>
+                        {c.name} ({c.code})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 <div className="grid gap-1.5">
                   <Label htmlFor="description" className="text-foreground">Job Description</Label>
                   <textarea 
                     id="description"
                     {...register("description")}
                     aria-invalid={errors.description ? true : undefined}
-                    placeholder="Job Description" 
+                    placeholder="Describe what needs to be done..." 
                     rows={3}
                     className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white resize-none"
                   />
@@ -218,6 +206,7 @@ export default function Marketplace() {
                     <p className="text-sm text-red-600 dark:text-red-400">{errors.description.message}</p>
                   )}
                 </div>
+
                 <div className="grid gap-1.5">
                   <Label htmlFor="budget" className="text-foreground">Budget (₱)</Label>
                   <Input 
@@ -225,48 +214,43 @@ export default function Marketplace() {
                     type="number" 
                     {...register("budget", { valueAsNumber: true })}
                     aria-invalid={errors.budget ? true : undefined}
-                    placeholder="Budget" 
-                    min="1"
+                    placeholder="100" 
+                    min="10"
                   />
                   {errors.budget && (
                     <p className="text-sm text-red-600 dark:text-red-400">{errors.budget.message}</p>
                   )}
                 </div>
+
                 <div className="flex gap-2 mt-2">
                   <Button type="submit" disabled={createJobMutation.isPending} className="flex-1 bg-green-600 hover:bg-green-700 text-white">
                     {createJobMutation.isPending ? 'Submitting...' : 'Submit Job'}
                   </Button>
                 </div>
+
+                {createJobMutation.isError && (
+                  <p className="text-sm text-red-600">{createJobMutation.error.message}</p>
+                )}
               </form>
             )}
           </div>
           
+          {/* Reference Data Card */}
           <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Marketplace Network</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Service Categories</h2>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">Reference data loaded from Atlas MongoDB</p>
             <div className="flex flex-col gap-3">
-              {users.map(user => {
-                let stats = null;
-                if (user.role === 'Client') {
-                  const jobCount = jobs.filter(j => j.clientId === user.id && j.status === 'Open').length;
-                  stats = <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-green-500"></span> {jobCount} Open Job{jobCount !== 1 ? 's' : ''}</span>;
-                } else if (user.role === 'Worker' || user.name === 'Maria Clara') { 
-                  // Assuming Maria Clara is a Worker for demo, update as needed
-                  const appCount = applications.filter(a => a.workerId === user.id).length;
-                  stats = <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-indigo-500"></span> {appCount} Application{appCount !== 1 ? 's' : ''}</span>;
-                } else {
-                  stats = <span className="flex items-center gap-1.5 text-gray-400 dark:text-gray-500">System Admin</span>;
-                }
-
-                return (
-                  <UserCard 
-                    key={user.id} 
-                    user={user} 
-                    onSelect={() => setCurrentUser(user)} 
-                    compact={true} 
-                    stats={stats}
-                  />
-                );
-              })}
+              {categories.map((cat) => (
+                <div key={cat.code} className="p-3 bg-gray-50 dark:bg-gray-900/60 rounded-lg border border-gray-100 dark:border-gray-800">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="font-semibold text-sm text-gray-900 dark:text-white">{cat.name}</span>
+                    <span className="px-2 py-0.5 rounded text-xs font-mono bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300">
+                      {cat.code}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{cat.description}</p>
+                </div>
+              ))}
             </div>
           </div>
         </section>
@@ -294,7 +278,7 @@ export default function Marketplace() {
               <div className="text-center py-12 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg">
                 <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                 <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">No jobs found</h3>
-                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Try adjusting your search or post a new job.</p>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Post a new job above to get started.</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -302,16 +286,13 @@ export default function Marketplace() {
                   <div key={job.id} className="flex flex-col h-full bg-gray-50 dark:bg-gray-900/50 rounded-xl p-1 border border-gray-100 dark:border-gray-800">
                     <JobCard job={job} onApply={handleApplyJob} />
                     
-                    {job.clientId === currentUser.id && (
+                    {applications.filter(a => a.jobId === job.id).length > 0 && (
                       <div className="mt-3 px-4 py-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm mx-2 mb-2">
                         <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
                           <svg className="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                           Applications ({applications.filter(a => a.jobId === job.id).length})
                         </h4>
                         <div className="max-h-48 overflow-y-auto pr-1 space-y-3">
-                          {applications.filter(a => a.jobId === job.id).length === 0 && (
-                            <p className="text-sm text-gray-500 dark:text-gray-400 italic">No applications yet.</p>
-                          )}
                           {applications.filter(a => a.jobId === job.id).map(app => (
                             <ApplicationCard key={app.id} application={app} onReview={handleReviewApplication} />
                           ))}

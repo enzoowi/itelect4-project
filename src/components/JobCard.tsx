@@ -17,9 +17,16 @@ const JobCard: React.FC<JobCardProps> = ({ job, onApply }) => {
                             {job.title}
                         </Link>
                     </h3>
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                    <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                      {job.category && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300">
+                          {job.category}
+                        </span>
+                      )}
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
                         {job.status}
-                    </span>
+                      </span>
+                    </div>
                 </div>
                 <p className="text-gray-600 dark:text-gray-300 mb-4 line-clamp-3">{job.description}</p>
                 <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-4">

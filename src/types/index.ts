@@ -40,6 +40,7 @@ export interface Job {
     budget: Money;
     clientId: ID;
     status: JobStatus;
+    category?: string;
 }
 
 export interface Application {
@@ -68,10 +69,48 @@ export interface Course {
     semester: string;
 }
 
+export interface Category {
+    code: string;
+    name: string;
+    description: string;
+}
+
 export interface Submission {
+    id?: string;
+    studentId?: string;
+    courseCode: string;
     repoUrl: string;
+    submittedAt?: string;
     score?: number;
 }
 
-export type NewJob = Omit<Job, 'id'>;
+export type ApiSubmission = Omit<
+  Submission,
+  "id" | "studentId" | "submittedAt"
+> & {
+  id: string;
+  studentId: string;
+  submittedAt: string;
+};
+
+export type NewSubmission = Pick<Submission, "courseCode" | "repoUrl">;
+
+export type ApiUser = Omit<User, "id"> & {
+  id: string;
+};
+
+export interface AuthReply {
+  token: string;
+  user: ApiUser;
+}
+
+export type NewJob = {
+  title: string;
+  description: string;
+  budget: Money;
+  status?: JobStatus;
+  category?: string;
+  clientId?: ID;
+};
+
 export type NewApplication = Omit<Application, 'id'>;

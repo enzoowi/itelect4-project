@@ -6,6 +6,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Marketplace from './pages/Marketplace';
 import JobDetails from './pages/JobDetails';
+import ReviewPage from './pages/ReviewPage';
 import NotFound from './pages/NotFound';
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route path="marketplace" element={<Marketplace />} />
           <Route path="jobs/:id" element={<JobDetails />} />
+          <Route path="review" element={<ReviewPage />} />
         </Route>
 
         {/* Catch-all route for 404 */}

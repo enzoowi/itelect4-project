@@ -39,6 +39,7 @@ export default function Layout() {
           </div>
           <nav className="flex items-center gap-4 w-full sm:w-auto">
             <NavLink to="/marketplace" className={({ isActive }) => isActive ? 'text-indigo-600 dark:text-indigo-400 font-semibold' : 'text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium'}>Marketplace</NavLink>
+            <NavLink to="/review" className={({ isActive }) => isActive ? 'text-indigo-600 dark:text-indigo-400 font-semibold' : 'text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium'}>AI Review</NavLink>
 
             {/* Dark mode toggle */}
             <button

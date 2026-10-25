@@ -1,5 +1,7 @@
 # Mini Job Marketplace
 
+[![CI](https://github.com/enzoowi/itelect4-project/actions/workflows/ci.yml/badge.svg)](https://github.com/enzoowi/itelect4-project/actions/workflows/ci.yml)
+
 ## Live Deployment
 
 | | URL |
@@ -8,6 +10,20 @@
 | **Backend API** | <https://itelect4-backend-omega.vercel.app/> |
 
 This is a React-based school campus task board web application built with TypeScript and Vite. Students can post small errands or tasks like buying food from the canteen, printing assignments, or getting tutoring help. Other students can apply to complete those tasks for a small fee. An admin can approve, reject, or mark tasks as completed.
+
+## Architecture
+
+```mermaid
+flowchart LR
+  fe["itelect4-project<br/>React + Vite on Vercel"]
+  be["itelect4-backend<br/>Express on Vercel"]
+  db[("MongoDB Atlas")]
+  ai["Gemini API"]
+  fe -- "fetch + Bearer token" --> be
+  be -- "Mongoose" --> db
+  be -- "GEMINI_API_KEY" --> ai
+```
+
 
 ## Project Structure and Features
 
